@@ -11,10 +11,6 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
- *
- *  ====KNOWN ISSUES====
- *	1. The SmartPlug shuts off too soon. right now it's hard coded and if computer takes longer than 2 minutes to
- *     shutdown it will perform a hard shutdown.
  *  
  */
 definition(
@@ -36,13 +32,6 @@ preferences {
 		input "theswitch", "capability.switch", required: true, title: "Switch"
 	}
     
-    /*
-    section("Smart Outlet") {
-    	//used for testing
-    	input "thepower", "capability.switch", required: true, title: "Smart Outlet"
-    }
-    */
-    
     section("Smart Plug with Power Meter") {
     	// Verifies computer is offline and shuts off thepower
     	input "themeter", "capability.powerMeter", required: true, title: "Power Meter"
@@ -51,6 +40,7 @@ preferences {
     section("Computer Settings") {
     	input "computerIP", "text", required: true, title: "Computer IP Address", description: "Enter the IP address of your computer."
         input "computerPort", "number", required: true, title: "Web Server port", description: "Enter the port of your EventGhost web server."
+        input "meterthreshold", "number", required: true, title: "Shutdown Threshold", description: "If the meter drops below this threshold the SmartPort will shutdown."
     }
 }
 
@@ -68,42 +58,61 @@ def updated() {
 }
 
 def initialize() {
+    state.lastMeter = 0
+    state.currentMeter = 0
+    
 	subscribe(theswitch,"switch.on",theswitchOnHandler)
     subscribe(theswitch,"switch.off",theswitchOffHandler)
 }
 
 def theswitchOnHandler(evt) {
 	log.debug "theswitchOnHandler: $evt"
-    //if power is off turn on power
-    //turn thepower on
+	schedule("* * * * * ?", getMeterValue)
     setPowerOn()
 }
 
 def theswitchOffHandler(evt) {
 	log.debug "theswitchOffHandler: $evt"
     shutdownComputer()
-    runIn(30*4,setPowerOff)
+    log.debug "theswitchOffHandler: Shutdown Computer"
+    schedule("* * * * * ?", setPowerOff)
 }
 
 def getMeterValue() {
-	def meterValue = themeter.currentPower as int
-    return meterValue
+	log.debug "Cronjob getMeterValue: Run"
+	themeter.refresh()
+	state.lastMeter = state.currentMeter
+    log.debug "Cronjob getMeterValue: last Meter = $state.lastMeter"
+    state.currentMeter = themeter.currentPower as int
+    log.debug "Cronjob getMeterValue: current Meter = $state.currentMeter"    
 }
 
 def setPowerOn() {
 	themeter.on()
 }
-
+ 
 def setPowerOff() {
-	themeter.off()
+	log.debug "Cronjob setPowerOff: Ran"
+	def shutdownReady = false
+    
+	if(state.currentMeter <= meterthreshold && state.lastMeter <= meterthreshold){
+    	log.debug "Cronjob setPowerOff: shutdownReady is true"
+    	shutdownReady = true
+    }
+	
+    if(shutdownReady){
+		themeter.off()
+		unschedule(getMeterValue)
+    	unschedule(setPowerOff)
+        state.lastMeter = 0
+        state.currentMeter = 0
+	}
 }
 
 def shutdownComputer(evt) {
 	def egHost = computerIP + ":" + computerPort
-    log.debug "$egHost"
 	def egRawCommand = "ST.PCPower.Shutdown"
 	def egRestCommand = java.net.URLEncoder.encode(egRawCommand)
-	log.debug "egRestCommand:  $egRestCommand"
 	sendHubCommand(new physicalgraph.device.HubAction("""GET /?$egRestCommand HTTP/1.1\r\nHOST: $egHost\r\n\r\n""", physicalgraph.device.Protocol.LAN))
 }
 // TODO: implement event handlers
