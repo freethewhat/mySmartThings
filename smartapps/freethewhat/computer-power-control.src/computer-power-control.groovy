@@ -26,22 +26,22 @@ definition(
 
 preferences {
 	section("Simulated Switch") {
-    	// used to initiate shutdown of PC and power off when themeter is below threshold.
-        // If integrated with Amazon Echo or Google Home. Name it after the device (eg. Computer, 
-        // Desktop Computer, Entertainment Center, etc.)
+		// used to initiate shutdown of PC and power off when themeter is below threshold.
+		// If integrated with Amazon Echo or Google Home. Name it after the device (eg. Computer, 
+		// Desktop Computer, Entertainment Center, etc.)
 		input "theswitch", "capability.switch", required: true, title: "Switch"
 	}
     
-    section("Smart Plug with Power Meter") {
-    	// Verifies computer is offline and shuts off thepower
-    	input "themeter", "capability.powerMeter", required: true, title: "Power Meter"
-    }
+    	section("Smart Plug with Power Meter") {
+		// Verifies computer is offline and shuts off thepower
+		input "themeter", "capability.powerMeter", required: true, title: "Power Meter"
+   	 }
     
-    section("Computer Settings") {
-    	input "computerIP", "text", required: true, title: "Computer IP Address", description: "Enter the IP address of your computer."
-        input "computerPort", "number", required: true, title: "Web Server port", description: "Enter the port of your EventGhost web server."
-        input "meterthreshold", "number", required: true, title: "Shutdown Threshold", description: "If the meter drops below this threshold the SmartPort will shutdown."
-    }
+  	section("Computer Settings") {
+		input "computerIP", "text", required: true, title: "Computer IP Address", description: "Enter the IP address of your computer."
+		input "computerPort", "number", required: true, title: "Web Server port", description: "Enter the port of your EventGhost web server."
+		input "meterthreshold", "number", required: true, title: "Shutdown Threshold", description: "If the meter drops below this threshold the SmartPort will shutdown."
+    	}
 }
 
 def installed() {
@@ -58,33 +58,32 @@ def updated() {
 }
 
 def initialize() {
-    state.lastMeter = 0
-    state.currentMeter = 0
-    
+	state.lastMeter = 0
+	state.currentMeter = 0
 	subscribe(theswitch,"switch.on",theswitchOnHandler)
-    subscribe(theswitch,"switch.off",theswitchOffHandler)
+	subscribe(theswitch,"switch.off",theswitchOffHandler)
 }
 
 def theswitchOnHandler(evt) {
 	log.debug "theswitchOnHandler: $evt"
 	schedule("* * * * * ?", getMeterValue)
-    setPowerOn()
+	setPowerOn()
 }
 
 def theswitchOffHandler(evt) {
 	log.debug "theswitchOffHandler: $evt"
-    shutdownComputer()
-    log.debug "theswitchOffHandler: Shutdown Computer"
-    schedule("* * * * * ?", setPowerOff)
+	shutdownComputer()
+	log.debug "theswitchOffHandler: Shutdown Computer"
+	schedule("* * * * * ?", setPowerOff)
 }
 
 def getMeterValue() {
 	log.debug "Cronjob getMeterValue: Run"
 	themeter.refresh()
 	state.lastMeter = state.currentMeter
-    log.debug "Cronjob getMeterValue: last Meter = $state.lastMeter"
-    state.currentMeter = themeter.currentPower as int
-    log.debug "Cronjob getMeterValue: current Meter = $state.currentMeter"    
+	log.debug "Cronjob getMeterValue: last Meter = $state.lastMeter"
+	state.currentMeter = themeter.currentPower as int
+	log.debug "Cronjob getMeterValue: current Meter = $state.currentMeter"    
 }
 
 def setPowerOn() {
@@ -96,16 +95,16 @@ def setPowerOff() {
 	def shutdownReady = false
     
 	if(state.currentMeter <= meterthreshold && state.lastMeter <= meterthreshold){
-    	log.debug "Cronjob setPowerOff: shutdownReady is true"
-    	shutdownReady = true
-    }
+		log.debug "Cronjob setPowerOff: shutdownReady is true"
+		shutdownReady = true
+    	}
 	
-    if(shutdownReady){
+	if(shutdownReady){
 		themeter.off()
 		unschedule(getMeterValue)
-    	unschedule(setPowerOff)
-        state.lastMeter = 0
-        state.currentMeter = 0
+		unschedule(setPowerOff)
+		state.lastMeter = 0
+		state.currentMeter = 0
 	}
 }
 
