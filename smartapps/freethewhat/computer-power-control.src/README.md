@@ -7,8 +7,4 @@ Computer Power control allows you to control your computer via a SmartPower Swit
   * Windows PC
   * Smart Outlet with Wattage Meter
   * Simulated Switch
-  
-### Software
-  
-  * EventGhost
-  * EventGhost Webserver
+  * EventGhost with Webserver
