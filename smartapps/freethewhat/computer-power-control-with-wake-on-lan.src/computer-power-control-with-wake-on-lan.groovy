@@ -25,6 +25,9 @@ definition(
 
 
 preferences {    
+	// simulated switch to control wake on lan and eventghost methods. 
+    // if using amazon echo or google home name it after the device you would like 
+    // to power on to allow voice control. (ie. Desktop PC, Media PC, Computer, etc.)
     section("Simulated Switch") {
     	input "theswitch", "capability.switch", required: true, title: "Switch"
     }
