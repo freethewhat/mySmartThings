@@ -1,5 +1,5 @@
 /**
- *  Computer Wake on LAN
+ *  Computer Power Control with WOL
  *
  *  Copyright 2016 Matt Sutton
  *
@@ -14,7 +14,7 @@
  *
  */
 definition(
-    name: "Computer Wake on LAN",
+    name: "Computer Power Control with WOL",
     namespace: "freethewhat",
     author: "Matt Sutton",
     description: "Powers a computer using wake on LAN and eventGhost to power of computer.",
