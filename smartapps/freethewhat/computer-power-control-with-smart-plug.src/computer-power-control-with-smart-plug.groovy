@@ -96,16 +96,11 @@ def setPowerOff() {
     
 	if(state.currentMeter <= meterthreshold && state.lastMeter <= meterthreshold){
 		log.debug "Cronjob setPowerOff: shutdownReady is true"
-		shutdownReady = true
-    	}
-	
-	if(shutdownReady){
-		themeter.off()
 		unschedule(getMeterValue)
 		unschedule(setPowerOff)
 		state.lastMeter = 0
 		state.currentMeter = 0
-	}
+    	}
 }
 
 def shutdownComputer(evt) {
