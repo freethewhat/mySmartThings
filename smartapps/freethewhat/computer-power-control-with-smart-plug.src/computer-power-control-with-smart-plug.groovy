@@ -58,19 +58,25 @@ def updated() {
 }
 
 def initialize() {
+	// create and initialize lastmeter and currentmeter states. Used to verify computer is offline
 	state.lastMeter = 0
 	state.currentMeter = 0
+    
 	subscribe(theswitch,"switch.on",theswitchOnHandler)
 	subscribe(theswitch,"switch.off",theswitchOffHandler)
 }
 
 def theswitchOnHandler(evt) {
-	log.debug "theswitchOnHandler: $evt"
+	// create cron to refresh meter and update states. Runs ever minute.
+    // Call setpower on to turn on smartplug
+    log.debug "theswitchOnHandler: $evt"
 	schedule("* * * * * ?", getMeterValue)
 	setPowerOn()
 }
 
 def theswitchOffHandler(evt) {
+	// calls shutdown computer to send eventghost command
+    // schedules setpower off to verify computer is offline.
 	log.debug "theswitchOffHandler: $evt"
 	shutdownComputer()
 	log.debug "theswitchOffHandler: Shutdown Computer"
@@ -78,6 +84,8 @@ def theswitchOffHandler(evt) {
 }
 
 def getMeterValue() {
+	// refreshes meter, sets lastmeter to old current meeting, and
+    // sets currentmeter to latest value of the meter
 	log.debug "Cronjob getMeterValue: Run"
 	themeter.refresh()
 	state.lastMeter = state.currentMeter
@@ -87,12 +95,13 @@ def getMeterValue() {
 }
 
 def setPowerOn() {
+	// switches the smartplug on
 	themeter.on()
 }
  
 def setPowerOff() {
-	log.debug "Cronjob setPowerOff: Ran"
-	def shutdownReady = false
+	// if currentmeter and lastmeter are below threshold it shuts of power, unschedules
+    // cronjobs, and resets states.
     
 	if(state.currentMeter <= meterthreshold && state.lastMeter <= meterthreshold){
 		log.debug "Cronjob setPowerOff: shutdownReady is true"
@@ -104,6 +113,8 @@ def setPowerOff() {
 }
 
 def shutdownComputer(evt) {
+	// creates variables  for eventghost and creates hubaction and sends via sendhubcommand.
+    
 	def egHost = computerIP + ":" + computerPort
 	def egRawCommand = "ST.PCPower.Shutdown"
 	def egRestCommand = java.net.URLEncoder.encode(egRawCommand)
