@@ -104,7 +104,7 @@ def setPowerOff() {
     // cronjobs, and resets states.
     
 	if(state.currentMeter <= meterthreshold && state.lastMeter <= meterthreshold){
-		log.debug "Cronjob setPowerOff: shutdownReady is true"
+        themeter.off()
 		unschedule(getMeterValue)
 		unschedule(setPowerOff)
 		state.lastMeter = 0
